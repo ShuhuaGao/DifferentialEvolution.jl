@@ -1,0 +1,13 @@
+name = "DifferentialEvolution"
+uuid = "1e3681a4-ef0f-4ac9-8176-7a437b8a6f23"
+authors = ["Shuhua <nus.gao.shuhua@gmail.com\t> and contributors"]
+version = "0.1.0"
+
+[compat]
+julia = "1.5"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
