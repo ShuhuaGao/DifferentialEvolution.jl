@@ -2,5 +2,6 @@ using DifferentialEvolution
 using Test
 
 @testset "DifferentialEvolution.jl" begin
-    # Write your tests here.
+    include("nsga_ii_test.jl")
+    include("constraint_test.jl")
 end
