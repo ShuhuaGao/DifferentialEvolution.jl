@@ -35,8 +35,8 @@ The standard DE type with the following fields:
     of a variable.
 - `options::TO`: options which usually contain the control parameters. See also [`StdOptions`](@ref).
 
-In practice, more convenient types are usually used like [`StdDES`](@ref) for single-objective DE 
-and [`StdDEM`](@ref) for multiobjective DE.
+In practice, more convenient types are usually used like [`StdSoDE`](@ref) for single-objective DE 
+and [`StdMoDE`](@ref) for multiobjective DE.
 """
 struct StdDE{TP<:AM{<:AF}, TF<:AVoM{<:Real}, TS<:ASoV{<:Integer}, 
         TO<:DEOptions} <: DEEvolver
@@ -67,11 +67,17 @@ end
 """
     StdDE(::Type{TF}, nindividuals::Int, bounds::AM{<:AF}, opt::DEOptions; weights::ASoV{<:Real}) where {TF<:Real}
 
-Create a standard DE evolver with a population of `nindividuals` individuals. Each individual is a `d`-dim 
-vector of float types.
+Create a standard DE evolver with a population of `nindividuals` individuals and options specified by 
+`opt`. The length of each individual (also known as a *vector*) is equal to the number of rows of `bounds`.
+That is, each row of `bounds` denotes the range ``[l, u]`` of a variable, where ``l`` and ``u`` denote 
+the lower and upper bound, respectively. 
 
 `TF` is the data type of fitness. The type of individuals (solution vectors) is the same as the type
 of `bounds`.
+
+The size of `senses` indicates the number of objectives.
+If the supplied `senses` is a scalar, then a single-objective DE [`StdSoDE`](@ref) instance is built;
+otherwise, a multi-objective [`StdMoDE`](@ref) is constructed. 
 """
 function StdDE(::Type{TF}, nindividuals::Int, bounds::AM{<:AbstractFloat}, opt::DEOptions; 
         senses::ASoV{<:Integer}) where {TF<:Real}
@@ -92,20 +98,36 @@ function StdDE(::Type{TF}, nindividuals::Int, bounds::AM{<:AbstractFloat}, opt::
     return StdDE(pop, fitness, senses, bounds, opt)
 end
 
+"""
+    StdDE(nindividuals::Int, bounds::AM{<:AbstractFloat}, opt::DEOptions; senses::ASoV{<:Integer})
+
+Construct a standard DE whose vectors are of default type `Float64`.
+See [`StdDE(::Type{TF}, nindividuals::Int, bounds::AM{<:AbstractFloat}, opt::DEOptions; 
+        senses::ASoV{<:Integer}) where {TF<:Real}`](@ref) for details.
+"""
 StdDE(nindividuals::Int, bounds::AM{<:AbstractFloat}, opt::DEOptions; senses::ASoV{<:Integer}) =
     StdDE(Float64, nindividuals, bounds, opt; senses)
 
 """
+    StdSoDE{TP<:AM{<:AF}, TF<:AV{<:Real}, TW<:Real, TO<:DEOptions}
+
 Standard single-objective DE.
 """
 const StdSoDE{TP<:AM{<:AF}, TF<:AV{<:Real}, TW<:Real, TO<:DEOptions} = StdDE{TP, TF, TW, TO}
 
 """
+    StdMoDE{TP<:AM{<:AF}, TF<:AM{<:Real}, TW<:AV{<:Real}, TO<:DEOptions}
+
 Standard multi-objective DE.
 """
 const StdMoDE{TP<:AM{<:AF}, TF<:AM{<:Real}, TW<:AV{<:Real}, TO<:DEOptions} = StdDE{TP, TF, TW, TO}
 
+"""
+    best_individual(de::StdSoDE; all=false)
 
+Get the best individual (or individuals) from the single-objective DE population.
+See also [`best_individual(e::Evolver; all=false)`](@ref) for more details.
+"""
 function best_individual(de::StdSoDE; all=false)
     bf = best_fitness(de)
     if all
@@ -116,6 +138,11 @@ function best_individual(de::StdSoDE; all=false)
     return de.pop[:, ib]
 end
 
+"""
+    best_fitness(de::StdSoDE)
+
+Get the best fitness from the single-objective DE population.
+"""
 function best_fitness(de::StdSoDE)
     if de.senses > 0 # a scalar here
         return maximum(fitness(de))
@@ -155,17 +182,16 @@ Standard single-objective differential evolution.
 Each individual's fitness is evaluated by the given `evaluator` and the evolution lasts for `ngen`
 iterations. Keyword arguments:
 - `mut=mutate_rand_1!`: mutation method
-- `cx=crossover_binomial!`: crossover method
-- `bc=:bounce_back`: boundary constraints handling method
+- `cx=crossover_binomial!`: crossover method, currently support
+- `bc=:bounce_back`: boundary constraints handling method， currently support
+    + :bounce_back
 - `stats=[:best, :avg]`: fitness statistics to display in each generation. 
     Valid entries are `:best`, `:avg`(average), `:max`, `:min`, `:std`(standard deviation).
 - `stats_fmt::FormatSpec=FormatSpec("10.5e")`: format specification of each statistic term for display.
-See [Formatting.jl](https://github.com/JuliaIO/Formatting.jl) for details.
-TODO: progress bar 
-TODO: bound constraint, symbol or function?
+    See [Formatting.jl](https://github.com/JuliaIO/Formatting.jl) for details.
 """
 function evolve!(de::StdSoDE, evaluator::Function, ngen; mut=mutate_rand_1!, cx=crossover_binomial!,
-    bc=:bounce_back, stats=[:best, :avg], stats_fmt::FormatSpec=FormatSpec("<10.5e"))
+    bc::Symbol=:bounce_back, stats=[:best, :avg], stats_fmt::FormatSpec=FormatSpec("<10.5e"))
 
     stats_func = Dict(:best => fs -> senses(de) > 0 ? maximum(de.fitness) : minimum(de.fitness),
         :avg=>mean, :std=>std, :max=>maximum, :min=>minimum)

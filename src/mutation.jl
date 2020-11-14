@@ -16,14 +16,20 @@ end
 """
     mutate_rand_1!(V::AV{T}, i::Integer, de::StdDE{<:AM{T}}) where T<:AF
 
-DE/rand/1 mutation in place, which produces a donor vector to crossover with the `i`-th target vector (parent).
+DE/rand/1 mutation in place, which produces a donor vector `V` to crossover with the `i`-th target vector (parent).
 """
 function mutate_rand_1!(V::AV{T}, i::Integer, de::StdDE{<:AM{T}}) where T<:AF
     mutate_rand_1!(V, i, de.pop, de.options.F, de._rand_indices)
 end
 
- #TODO current
 
+"""
+    mutate_rand_1!(V::AV{T}, i::Integer, pop::AM{T}, F::AF, indices::AV{<:Integer}) where T<:AF
+
+A lower-level implementation. `V` is the donor vector to be filled, `i` is the index of the target 
+vector in the population `pop` whose size is ``n``, `F` is the scale factor, and `indices` is an 
+array of length ``n`` that contains intergers from 1 to ``n`` (in an arbitrary order).
+"""
 function mutate_rand_1!(V::AV{T}, i::Integer, pop::AM{T}, F::AF, indices::AV{<:Integer}) where T<:AF
     shuffle!(indices)
     # choose three vectors different from `i` for differential operation    

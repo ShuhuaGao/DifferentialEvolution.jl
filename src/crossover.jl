@@ -13,10 +13,23 @@ function crossover_binomial(i::Integer, de::StdDE{<:AM{T}}, V::AV{T}) where T<:A
     return U
 end
 
+"""
+    crossover_binomial!(U::AV{T}, i::Integer, de::StdDE{<:AM{T}}, V::AV{T}) where T<:AF
+
+Recombine the `i`-th vector of `de` and the donor vector `V` into a trial vector `U`. The crossover
+rate is specied by `de.options`. 
+
+See also [`StdDE`](@ref).
+"""
 function crossover_binomial!(U::AV{T}, i::Integer, de::StdDE{<:AM{T}}, V::AV{T}) where T<:AF
     crossover_binomial!(U, view(de.pop, :, i), V, de.options.Cr)
 end
 
+"""
+    crossover_binomial!(U::AV{T}, X::AV{T}, V::AV{T}, Cr::AF) where T<:AF
+
+Recombine two vectors `X` and `V` into `U` subject to the rate `Cr`.
+"""
 function crossover_binomial!(U::AV{T}, X::AV{T}, V::AV{T}, Cr::AF) where T<:AF
     @assert length(U) == length(X) == length(V)
     d = length(U)
