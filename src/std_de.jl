@@ -252,7 +252,7 @@ function evolve!(de::StdSoDE, evaluator::Function, ngen; mut=mutate_rand_1!, cx=
         to_display && report(g)
         if history
             # max/min/avg/std
-            for (j, op) in enumerate(((maximum, minimum, mean, std)))
+            for (j, op) in enumerate((maximum, minimum, mean, std))
                 records[g, j] = op(de.fitness)
             end
         end
