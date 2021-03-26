@@ -189,9 +189,12 @@ iterations. Keyword arguments:
     Valid entries are `:best`, `:avg`(average), `:max`, `:min`, `:std`(standard deviation).
 - `stats_fmt::FormatSpec=FormatSpec("10.5e")`: format specification of each statistic term for display.
     See [Formatting.jl](https://github.com/JuliaIO/Formatting.jl) for details.
+- `history::Bool`: if `true`, record the convergence history including the max/min/avg/std fitness in 
+    each interation and return the record as an array
 """
 function evolve!(de::StdSoDE, evaluator::Function, ngen; mut=mutate_rand_1!, cx=crossover_binomial!,
-    bc::Symbol=:bounce_back, stats=[:best, :avg], stats_fmt::FormatSpec=FormatSpec("<10.5e"))
+    bc::Symbol=:bounce_back, stats=[:best, :avg], stats_fmt::FormatSpec=FormatSpec("<10.5e"),
+    history::Bool=false)
 
     stats_func = Dict(:best => fs -> senses(de) > 0 ? maximum(de.fitness) : minimum(de.fitness),
         :avg=>mean, :std=>std, :max=>maximum, :min=>minimum)
@@ -224,6 +227,12 @@ function evolve!(de::StdSoDE, evaluator::Function, ngen; mut=mutate_rand_1!, cx=
     # main loop
     V = de.pop[:, 1]  # copy, to avoid frequent allocation
     U = de.pop[:, 1]
+    # history logging
+    if history
+        records = zeros(ngen, 4)
+    else
+        records = zeros(0, 0)
+    end
     for g in 1:ngen
         for i in 1:n
             mut(V, i, de) # donor
@@ -241,6 +250,13 @@ function evolve!(de::StdSoDE, evaluator::Function, ngen; mut=mutate_rand_1!, cx=
             end
         end
         to_display && report(g)
+        if history
+            # max/min/avg/std
+            for (j, op) in enumerate(((maximum, minimum, mean, std)))
+                records[g, j] = op(de.fitness)
+            end
+        end
         g += 1
     end
+    return records
 end
